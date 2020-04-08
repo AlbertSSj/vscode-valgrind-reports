@@ -10,7 +10,8 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:valgrindReports.openReports"
+		"onCommand:valgrindReports.openReports",
+		"onCommand:valgrindReports.addFile"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
@@ -18,8 +19,22 @@
 			{
 				"command": "valgrindReports.openReports",
 				"title": "Valgrind: Open Reports"
+			},
+			{
+				"command": "valgrindReports.addFile",
+				"title": "Valgrind: Add File"
 			}
-		]
+		],
+		"configuration": {
+			"title": "Valgrind Reports",
+			"properties": {
+				"valgrindReports.filesToOpen": {
+					"type": "array",
+					"default": [],
+					"description": "The list of files to parse when updating the aggregated report."
+				}
+			}
+		}
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",

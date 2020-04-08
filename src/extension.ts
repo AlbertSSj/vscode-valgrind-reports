@@ -15,6 +15,11 @@ export function activate(context: vscode.ExtensionContext) {
 		// Create or show panel
 		ValgrindReportsPanel.createOrShow();
 	}));
+
+	// The command to add a file to the report list
+	context.subscriptions.push(vscode.commands.registerCommand('valgrindReports.addFile', () => {
+		addFileToConfig();
+	}));
 }
 
 // this method is called when your extension is deactivated
@@ -22,6 +27,7 @@ export function deactivate() { }
 
 class ValgrindReportsPanel {
 	public static readonly viewType = 'valgrindReports';
+	public static readonly log = vscode.window.createOutputChannel("Valgrind Reports");
 
 	private static self: ValgrindReportsPanel;
 
@@ -46,7 +52,7 @@ class ValgrindReportsPanel {
 			column || vscode.ViewColumn.One,
 			{
 				// Enable javascript in the webview
-				enableScripts: true,
+				enableScripts: false,
 			}
 		);
 
@@ -88,8 +94,42 @@ class ValgrindReportsPanel {
 		);
 	}
 
-	private _update() { }
+	private _update() {
+		const webview = this._panel.webview;
+		webview.html = `
+			<!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Valgrind Reports</title>
+            </head>
+            <body>
+				<h1>XXX</h1>
+				<a href='file:///D:/1_Development/testfolder/aaaa.txt'>aaaa.txt</a>
+            </body>
+            </html>`;
+	}
 
 	public dispose() { }
+}
 
+async function addFileToConfig() {
+	const input = await vscode.window.showInputBox({ prompt: 'Add Valgrind Report to parse.' });
+	if (input !== undefined) {
+
+		// Get list from configuration
+		let valgrindReportsCfg = vscode.workspace.getConfiguration('valgrindReports', null);
+		let currentStatus = valgrindReportsCfg.get<Array<string>>('filesToOpen');
+		if (currentStatus === undefined) {
+			currentStatus = new Array<string>();
+		}
+		// Update configuration
+		let size = currentStatus.length;
+		currentStatus.push(input);
+		valgrindReportsCfg.update('filesToOpen', currentStatus, false, false);
+
+
+		ValgrindReportsPanel.log.appendLine(`Added file ${input} to scanned reports`);
+	}
 }
