@@ -34,7 +34,17 @@
 					"description": "The list of files to parse when updating the aggregated report."
 				}
 			}
-		}
+		},
+		"languages": [
+			{
+				"id": "valgrind",
+				"aliases": [
+					"Valgrind"
+				],
+				"configuration": "",
+				"firstLine": "^Valgind Reports.*\\b"
+			}
+		]
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",

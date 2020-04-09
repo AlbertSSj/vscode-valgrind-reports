@@ -15,6 +15,13 @@ export function activate(context: vscode.ExtensionContext) {
 	let provider = new ValgrindReportsProvider();
 	context.subscriptions.push(vscode.workspace.registerTextDocumentContentProvider('valgrind', provider));
 
+	// Register an Hover
+	vscode.languages.registerHoverProvider({ scheme: 'valgrind' }, {
+		provideHover(document, position, token) {
+			return new vscode.Hover('I am the hover from Alberto!');
+		}
+	});
+
 	// The command to open the report windows
 	context.subscriptions.push(vscode.commands.registerCommand('valgrindReports.openReports', command_openReports));
 
@@ -37,6 +44,8 @@ class ValgrindReportsProvider implements vscode.TextDocumentContentProvider {
 		let filesToOpen = valgrindReportsCfg.get<Array<string>>('filesToOpen');
 
 		let result: Array<string> = [];
+		result.push('Valgrind Reports');
+		result.push('');
 		filesToOpen?.forEach(file => {
 			result.push(file);
 		});
