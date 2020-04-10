@@ -22,6 +22,10 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	});
 
+	// // Register the tree data provider
+	// let treeDataProvider = new ValgrindTreeDataProvider();
+	// vscode.window.registerTreeDataProvider('valgrindTree', treeDataProvider);
+
 	// The command to open the report windows
 	context.subscriptions.push(vscode.commands.registerCommand('valgrindReports.openReports', command_openReports));
 
@@ -54,6 +58,17 @@ class ValgrindReportsProvider implements vscode.TextDocumentContentProvider {
 	}
 }
 
+class ValgrindTreeDataProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
+	private t = new vscode.TreeItem("banana");
+	onDidChangeTreeData?: vscode.Event<vscode.TreeItem | null | undefined> | undefined;
+	getTreeItem(element: vscode.TreeItem): vscode.TreeItem | Thenable<vscode.TreeItem> {
+		return this.t;
+	}
+	getChildren(element?: vscode.TreeItem | undefined): vscode.ProviderResult<vscode.TreeItem[]> {
+		return [];
+	}
+}
+
 async function command_addFile() {
 	const input = await vscode.window.showInputBox({ prompt: 'Add Valgrind Report to parse.' });
 	if (input !== undefined) {
@@ -80,4 +95,6 @@ async function command_openReports() {
 	let doc = await vscode.workspace.openTextDocument(uri);
 	// Show the document
 	await vscode.window.showTextDocument(doc, { preview: false });
+
+	const view = vscode.window.createTreeView('testView', { treeDataProvider: new ValgrindTreeDataProvider(), showCollapseAll: true });
 };
