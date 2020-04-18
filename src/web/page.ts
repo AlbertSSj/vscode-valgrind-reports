@@ -1,6 +1,12 @@
+// Tells the script that the page defines the data set
+declare var valgrindData: any;
+
 function createPage() {
-    let body = document.getElementById("body");
-    const keys = Object.keys(valgrindData);
+    let body = document.getElementById('body');
+    if (body === null) {
+        throw new Error('No body no game');
+    }
+    let keys = Object.keys(valgrindData);
     for (const key of keys) {
         const element = valgrindData[key];
         console.log(key);

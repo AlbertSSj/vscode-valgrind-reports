@@ -55,7 +55,7 @@ class ValgrindReportsPanel {
 			{
 				// Enable javascript in the webview
 				enableScripts: true,
-				localResourceRoots: [vscode.Uri.file(path.join(context.extensionPath, 'web'))]
+				localResourceRoots: [vscode.Uri.file(path.join(context.extensionPath, 'out/web'))]
 			}
 		);
 
@@ -99,7 +99,7 @@ class ValgrindReportsPanel {
 	}
 
 	private _onDiskPath(file: string): vscode.Uri {
-		let nonResource = path.join(this._context.extensionPath, 'web', file);
+		let nonResource = path.join(this._context.extensionPath, 'out/web', file);
 		let resource = this._panel.webview.asWebviewUri(vscode.Uri.file(nonResource));
 		return resource;
 	}
@@ -116,7 +116,7 @@ class ValgrindReportsPanel {
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 				<title>Valgrind Reports</title>
 				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src vscode-resource: 'nonce-${nonce}'"></meta>
-				<script src=${this._onDiskPath("script.js")}></script>
+				<script src="${this._onDiskPath('page.js')}"></script>
 				<script nonce="${nonce}">var valgrindData = ${JSON.stringify(valgrindData)};</script>
             </head>
             <body id="body">
