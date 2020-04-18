@@ -1,6 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import * as path from 'path';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -13,7 +14,7 @@ export function activate(context: vscode.ExtensionContext) {
 	// The command to open the report windows
 	context.subscriptions.push(vscode.commands.registerCommand('valgrindReports.openReports', () => {
 		// Create or show panel
-		ValgrindReportsPanel.createOrShow();
+		ValgrindReportsPanel.createOrShow(context);
 	}));
 
 	// The command to add a file to the report list
@@ -33,8 +34,9 @@ class ValgrindReportsPanel {
 
 	private readonly _panel: vscode.WebviewPanel;
 	private readonly _disposables: vscode.Disposable[] = [];
+	private readonly _context: vscode.ExtensionContext;
 
-	public static createOrShow() {
+	public static createOrShow(context: vscode.ExtensionContext) {
 		const column = vscode.window.activeTextEditor
 			? vscode.window.activeTextEditor.viewColumn
 			: undefined;
@@ -52,15 +54,17 @@ class ValgrindReportsPanel {
 			column || vscode.ViewColumn.One,
 			{
 				// Enable javascript in the webview
-				enableScripts: false,
+				enableScripts: true,
+				localResourceRoots: [vscode.Uri.file(path.join(context.extensionPath, 'web'))]
 			}
 		);
 
-		ValgrindReportsPanel.self = new ValgrindReportsPanel(panel);
+		ValgrindReportsPanel.self = new ValgrindReportsPanel(panel, context);
 	}
 
-	private constructor(panel: vscode.WebviewPanel) {
+	private constructor(panel: vscode.WebviewPanel, context: vscode.ExtensionContext) {
 		this._panel = panel;
+		this._context = context;
 
 		// Set the webview's initial html content
 		this._update();
@@ -94,19 +98,28 @@ class ValgrindReportsPanel {
 		);
 	}
 
+	private _onDiskPath(file: string): vscode.Uri {
+		let nonResource = path.join(this._context.extensionPath, 'web', file);
+		let resource = this._panel.webview.asWebviewUri(vscode.Uri.file(nonResource));
+		return resource;
+	}
+
 	private _update() {
 		const webview = this._panel.webview;
+		const nonce = getNonce();
+		const valgrindData = { 'a': 3, 'b': 4 };
 		webview.html = `
 			<!DOCTYPE html>
             <html lang="en">
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Valgrind Reports</title>
+				<title>Valgrind Reports</title>
+				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src vscode-resource: 'nonce-${nonce}'"></meta>
+				<script src=${this._onDiskPath("script.js")}></script>
+				<script nonce="${nonce}">var valgrindData = ${JSON.stringify(valgrindData)};</script>
             </head>
-            <body>
-				<h1>XXX</h1>
-				<a href='file:///D:/1_Development/testfolder/aaaa.txt'>aaaa.txt</a>
+            <body id="body">
             </body>
             </html>`;
 	}
@@ -132,4 +145,18 @@ async function addFileToConfig() {
 
 		ValgrindReportsPanel.log.appendLine(`Added file ${input} to scanned reports`);
 	}
+}
+
+/**
+ * Randomly generate a nonce.
+ * This code was inspired from the great https://github.com/mhutchie/vscode-git-graph.
+ * @returns The nonce.
+ */
+function getNonce(): string {
+	let text = '';
+	const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+	for (let i = 0; i < 32; i++) {
+		text += possible.charAt(Math.floor(Math.random() * possible.length));
+	}
+	return text;
 }
