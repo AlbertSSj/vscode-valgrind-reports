@@ -55,7 +55,7 @@ class ValgrindReportsPanel {
 			{
 				// Enable javascript in the webview
 				enableScripts: true,
-				localResourceRoots: [vscode.Uri.file(path.join(context.extensionPath, 'out/web'))]
+				localResourceRoots: [vscode.Uri.file(path.join(context.extensionPath))]
 			}
 		);
 
@@ -86,10 +86,18 @@ class ValgrindReportsPanel {
 
 		// Handle messages from the webview
 		this._panel.webview.onDidReceiveMessage(
-			message => {
+			async message => {
 				switch (message.command) {
 					case 'alert':
 						vscode.window.showErrorMessage(message.text);
+						return;
+					case 'open':
+						try {
+							let doc = await vscode.workspace.openTextDocument(message.text);
+							vscode.window.showTextDocument(doc);
+						} catch {
+							vscode.window.showErrorMessage(`Failed to open ${message.text}`);
+						}
 						return;
 				}
 			},
@@ -99,7 +107,7 @@ class ValgrindReportsPanel {
 	}
 
 	private _onDiskPath(file: string): vscode.Uri {
-		let nonResource = path.join(this._context.extensionPath, 'out/web', file);
+		let nonResource = path.join(this._context.extensionPath, file);
 		let resource = this._panel.webview.asWebviewUri(vscode.Uri.file(nonResource));
 		return resource;
 	}
@@ -107,7 +115,7 @@ class ValgrindReportsPanel {
 	private _update() {
 		const webview = this._panel.webview;
 		const nonce = getNonce();
-		const valgrindData = { 'a': 3, 'b': 4 };
+		const valgrindDataJson = this.createValgrindData();
 		webview.html = `
 			<!DOCTYPE html>
             <html lang="en">
@@ -115,13 +123,30 @@ class ValgrindReportsPanel {
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 				<title>Valgrind Reports</title>
-				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src vscode-resource: 'nonce-${nonce}'"></meta>
-				<script src="${this._onDiskPath('page.js')}"></script>
-				<script nonce="${nonce}">var valgrindData = ${JSON.stringify(valgrindData)};</script>
+				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src vscode-resource: 'nonce-${nonce}'; style-src vscode-resource:"></meta>
+				<link rel="stylesheet" href="${this._onDiskPath('src/web/page.css')}">
+				<script src="${this._onDiskPath('out/web/page.js')}"></script>
+				<script nonce="${nonce}">var valgrindData = ${valgrindDataJson};</script>
             </head>
             <body id="body">
             </body>
             </html>`;
+	}
+
+	private createValgrindData(): string {
+		// Get configured files
+		let valgrindReportsCfg = vscode.workspace.getConfiguration('valgrindReports', null);
+		let filesToOpen = valgrindReportsCfg.get<Array<string>>('filesToOpen');
+
+		// Save files in Object
+		const valgrindData: any = new Object();
+		filesToOpen?.forEach(file => {
+			valgrindData[file] = file;
+		});
+
+		// Stringify object
+		const valgrindDataJson = JSON.stringify(valgrindData);
+		return valgrindDataJson;
 	}
 
 	public dispose() { }

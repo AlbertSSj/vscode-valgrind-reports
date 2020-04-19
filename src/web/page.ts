@@ -1,5 +1,15 @@
 // Tells the script that the page defines the data set
 declare var valgrindData: any;
+declare var acquireVsCodeApi: any;
+
+const vscode = acquireVsCodeApi();
+
+function openFile(this: any, ev: MouseEvent) {
+    vscode.postMessage({
+        command: 'open',
+        text: this.textContent
+    });
+}
 
 function createPage() {
     let body = document.getElementById('body');
@@ -9,10 +19,14 @@ function createPage() {
     let keys = Object.keys(valgrindData);
     for (const key of keys) {
         const element = valgrindData[key];
-        console.log(key);
-        let header = document.createElement("h1");
-        header.textContent = key + " " + element;
-        body.appendChild(header);
+
+        let div = document.createElement("div");
+        body.appendChild(div);
+
+        let file = document.createElement("code");
+        file.textContent = element;
+        file.onclick = openFile;
+        div.appendChild(file);
     }
 };
 
